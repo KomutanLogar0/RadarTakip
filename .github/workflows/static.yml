@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radar Uyarı Sistemi</title>
+    
+    <!-- Leaflet CSS dosyasını ekleyin -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            padding: 1em;
+        }
+
+        #harita {
+            height: 400px;
+            margin: 50px;
+        }
+
+        #isaretleriSil {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px;
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        #aciklama {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background-color: white;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        #hizBilgisi {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #007BFF;
+            color: #fff;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            display: none;
+            z-index: 9999;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Radar Uyarı Sistemi</h1>
+    </header>
+    
+    <section id="harita"></section>
+    
+    <!-- İşaretleri Sil düğmesi -->
+    <button id="isaretleriSil">İşaretleri Sil</button>
+
+    <!-- Harita altındaki açıklama alanı -->
+    <div id="aciklama">
+        <p>Radar Uyarıları:</p>
+        <p><span style="color: red;">!</span> Hız Sınırı: 80 km/s</p>
+    </div>
+
+    <!-- Hız bilgisi alanı -->
+    <div id="hizBilgisi"></div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        const radarListesi = [
+            { enlem: 41.005, boylam: 39.726, bilgi: 'Radar 1: Hız Sınırı 80 km/s, Cadde: Örnek Caddesi' },
+            { enlem: 41.003, boylam: 39.724, bilgi: 'Radar 2: Hız Sınırı 80 km/s, Cadde: Başka Caddesi' },
+            { enlem: 41.005, boylam: 39.729, bilgi: 'Radar 3: Hız Sınırı 120 km/s, Cadde: Örnek Caddesi' },
+            { enlem: 41.007, boylam: 39.720, bilgi: 'Radar 4: Hız Sınırı 90 km/s, Cadde: Başka Caddesi' },
+            // Daha fazla radar ekleyebilirsiniz
+        ];
+
+        const uyariListesi = [
+            { enlem: 41.0051, boylam: 39.7261, bilgi: '100 metre sonra çevirme var', tur: 'Yol İşareti', renk: 'green' },
+            { enlem: 41.0052, boylam: 39.7262, bilgi: 'Hava yağmurlu', tur: 'Hava Durumu', renk: 'blue' },
+            { enlem: 41.0053, boylam: 39.7263, bilgi: 'İleride Trafik Kazası var', tur: 'Trafik Durumu', renk: 'orange' },
+            { enlem: 41.0054, boylam: 39.7264, bilgi: 'Yol kapalı', tur: 'Yol Durumu', renk: 'red' },
+            // Daha fazla uyarı ekleyebilirsiniz
+        ];
+
+        let oncekiKullaniciKonumu = null;
+
+        function isaretleriEkle(harita) {
+            radarListesi.forEach(radar => {
+                const isaret = L.marker([radar.enlem, radar.boylam], { icon: L.divIcon({ className: 'ozel-div-icon', html: '<div style="color:red;font-size:20px;">!</div>' }) }).addTo(harita);
+                isaret.bindPopup(radar.bilgi);
+            });
+
+            uyariListesi.forEach(uyari => {
+                const isaret = L.marker([uyari.enlem, uyari.boylam], { icon: L.divIcon({ className: 'ozel-div-icon', html: `<div style="color:${uyari.renk};font-size:20px;">!</div>` }) }).addTo(harita);
+                isaret.bindPopup(`${uyari.tur}: ${uyari.bilgi}`);
+            });
+        }
+
+        const harita = L.map('harita').setView([41.005, 39.726], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(harita);
+
+        isaretleriEkle(harita);
+
+        // Sol tıklama olayını dinle
+        harita.on('click', function (e) {
+            const yeniIsaret = L.marker(e.latlng).addTo(harita);
+            yeniIsaret.bindPopup('İşaretlenen Konum');
+        });
+
+        // İşaretleri Sil düğmesini seç
+        const isaretleriSilButonu = document.getElementById('isaretleriSil');
+
+        // İşaretleri Sil düğmesine tıklandığında
+        isaretleriSilButonu.addEventListener('click', function () {
+            // Haritadaki tüm işaretçileri kaldır
+            harita.eachLayer(layer => {
+                if (layer instanceof L.Marker) {
+                    harita.removeLayer(layer);
+                }
+            });
+        });
+
+        // Hız bilgisi alanı
+        const hizBilgisi = document.getElementById('hizBilgisi');
+
+        // Kullanıcının konumunu ve hızını al
+        const kullaniciKonumunuAl = () => {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    pozisyon => {
+                        const kullaniciHizi = pozisyon.coords.speed;
+
+                        // Hareket etmiyorsa 0 göster
+                        const gosterilecekHiz = kullaniciHizi ? (kullaniciHizi * 3.6).toFixed(2) : 0; // m/s'yi km/h'ye çevir
+
+                        // Hız bilgisini göster
+                        hizBilgisiniGoster(gosterilecekHiz);
+
+                        // Haritada kullanıcı konumunu işaretle
+                        const kullaniciEnlemBoylam = L.latLng(pozisyon.coords.latitude, pozisyon.coords.longitude);
+
+                        // Konum değişikliği animasyonu ekleyin
+                        harita.flyTo(kullaniciEnlemBoylam, 13, {
+                            animate: true,
+                            duration: 1.5
+                        });
+
+                        const kullaniciIsareti = L.marker(kullaniciEnlemBoylam).addTo(harita);
+                        kullaniciIsareti.bindPopup('Kullanıcı Konumu');
+
+                        // Önceki konumu kontrol et
+                        if (oncekiKullaniciKonumu) {
+                            const mesafe = kullaniciEnlemBoylam.distanceTo(oncekiKullaniciKonumu);
+
+                            // Eğer hareket ediyorsa mesafeyi göster
+                            if (mesafe > 0) {
+                                console.log(`Hareket Mesafesi: ${mesafe.toFixed(2)} metre`);
+                            }
+                        }
+
+                        // Önceki konumu güncelle
+                        oncekiKullaniciKonumu = kullaniciEnlemBoylam;
+                    },
+                    hata => console.error(hata),
+                    { enableHighAccuracy: true }
+                );
+            } else {
+                console.error('Bu tarayıcı tarafından desteklenmeyen bir konum özelliği.');
+            }
+        };
+
+        // Hız bilgisini gösterme fonksiyonu
+        const hizBilgisiniGoster = hiz => {
+            hizBilgisi.textContent = `Şu Anki Hızınız: ${hiz} km/saat`;
+            hizBilgisi.style.display = 'block';
+        };
+
+        // Kullanıcının konumunu ve hızını al, 1 saniyede bir kontrol et
+        setInterval(kullaniciKonumunuAl, 1000);
+    </script>
+</body>
+</html>
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  # Single deploy job since we're just deploying
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v2
+        with:
+          # Upload entire repository
+          path: '.'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2
