@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Radar Takip </title>
+    <title>Radar Uyarı Sistemi</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     
     <!-- Leaflet CSS dosyasını ekleyin -->
@@ -192,15 +192,18 @@
                         // Haritada kullanıcı konumunu işaretle
                         const kullaniciEnlemBoylam = L.latLng(pozisyon.coords.latitude, pozisyon.coords.longitude);
 
-                        // Konumu sadece ilk açılışta güncelle
+                        // İlk açılışta haritayı konum takip et
                         if (haritaIlkAcilis) {
-                            harita.setView(kullaniciEnlemBoylam, 13);
+                            harita.flyTo(kullaniciEnlemBoylam, 13, {
+                                animate: false
+                            });
                             haritaIlkAcilis = false;
                         }
 
                         // Konum değişikliği animasyonu ekleyin
                         harita.flyTo(kullaniciEnlemBoylam, 13, {
-                            animate: false
+                            animate: true,
+                            duration: 1.5
                         });
 
                         const kullaniciIsareti = L.marker(kullaniciEnlemBoylam).addTo(harita);
