@@ -123,6 +123,7 @@
         ];
 
         let oncekiKullaniciKonumu = null;
+        let haritaIlkAcilis = true;
 
         function isaretleriEkle(harita) {
             radarListesi.forEach(radar => {
@@ -135,7 +136,6 @@
                 isaret.bindPopup(`${uyari.tur}: ${uyari.bilgi}`);
             });
         }
-
 
         const harita = L.map('harita').setView([41.005, 39.726], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(harita);
@@ -150,7 +150,6 @@
 
         // İşaretleri Sil düğmesini seç
         const isaretleriSilButonu = document.getElementById('isaretleriSil');
-
 
         // İşaretleri Sil düğmesine tıklandığında
         isaretleriSilButonu.addEventListener('click', function () {
@@ -167,9 +166,12 @@
 
         // Konumuma Git düğmesi tıklandığında
         konumumaGitButonu.addEventListener('click', function () {
-            //Bulunduğumuz konuma geri dönme
-        })
-        
+            // Konum değişikliği animasyonu ekleyin
+            harita.flyTo(oncekiKullaniciKonumu, 13, {
+                animate: true,
+                duration: 1.5
+            });
+        });
 
         // Hız bilgisi alanı
         const hizBilgisi = document.getElementById('hizBilgisi');
@@ -190,10 +192,15 @@
                         // Haritada kullanıcı konumunu işaretle
                         const kullaniciEnlemBoylam = L.latLng(pozisyon.coords.latitude, pozisyon.coords.longitude);
 
+                        // Konumu sadece ilk açılışta güncelle
+                        if (haritaIlkAcilis) {
+                            harita.setView(kullaniciEnlemBoylam, 13);
+                            haritaIlkAcilis = false;
+                        }
+
                         // Konum değişikliği animasyonu ekleyin
                         harita.flyTo(kullaniciEnlemBoylam, 13, {
-                            animate: true,
-                            duration: 1.5
+                            animate: false
                         });
 
                         const kullaniciIsareti = L.marker(kullaniciEnlemBoylam).addTo(harita);
