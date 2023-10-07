@@ -123,7 +123,7 @@
         ];
 
         let oncekiKullaniciKonumu = null;
-        let haritaIlkAcilis = true;
+        let haritaKendiKonumAcma = true;
 
         function isaretleriEkle(harita) {
             radarListesi.forEach(radar => {
@@ -136,6 +136,7 @@
                 isaret.bindPopup(`${uyari.tur}: ${uyari.bilgi}`);
             });
         }
+
 
         const harita = L.map('harita').setView([41.005, 39.726], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(harita);
@@ -150,6 +151,7 @@
 
         // İşaretleri Sil düğmesini seç
         const isaretleriSilButonu = document.getElementById('isaretleriSil');
+
 
         // İşaretleri Sil düğmesine tıklandığında
         isaretleriSilButonu.addEventListener('click', function () {
@@ -166,11 +168,47 @@
 
         // Konumuma Git düğmesi tıklandığında
         konumumaGitButonu.addEventListener('click', function () {
-            // Konum değişikliği animasyonu ekleyin
-            harita.flyTo(oncekiKullaniciKonumu, 13, {
-                animate: true,
-                duration: 1.5
-            });
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    pozisyon => {
+                        const kullaniciEnlemBoylam = L.latLng(pozisyon.coords.latitude, pozisyon.coords.longitude);
+                        harita.setView(kullaniciEnlemBoylam, 13);
+                        const kullaniciIsareti = L.marker(kullaniciEnlemBoylam).addTo(harita);
+                        kullaniciIsareti.bindPopup('Kullanıcı Konumu');
+
+                        // Önceki konumu kontrol et
+                        if (oncekiKullaniciKonumu) {
+                            const mesafe = kullaniciEnlemBoylam.distanceTo(oncekiKullaniciKonumu);
+
+                            // Eğer hareket ediyorsa mesafeyi göster
+                            if (mesafe > 0) {
+                                console.log(`Hareket Mesafesi: ${mesafe.toFixed(2)} metre`);
+                            }
+                        }
+
+                        // Önceki konumu güncelle
+                        oncekiKullaniciKonumu = kullaniciEnlemBoylam;
+                    },
+                    hata => console.error(hata),
+                    { enableHighAccuracy: true }
+                );
+            } else {
+                console.error('Bu tarayıcı tarafından desteklenmeyen bir konum özelliği.');
+            }
+        });
+
+        // Harita konumu değiştiğinde olayını dinle
+        harita.on('move', function () {
+            haritaKendiKonumAcma = false;
+        });
+
+        // Harita stilini değiştirmek için butonu seç
+        const haritaStiliButonu = document.getElementById('haritaStiliDegistir');
+
+        // Harita stili butonuna tıklandığında
+        haritaStiliButonu.addEventListener('click', function () {
+            // Harita stilini değiştir
+            harita.setMapStyle({ style: 'dark' });
         });
 
         // Hız bilgisi alanı
@@ -178,7 +216,7 @@
 
         // Kullanıcının konumunu ve hızını al
         const kullaniciKonumunuAl = () => {
-            if (navigator.geolocation) {
+            if (navigator.geolocation && haritaKendiKonumAcma) {
                 navigator.geolocation.getCurrentPosition(
                     pozisyon => {
                         const kullaniciHizi = pozisyon.coords.speed;
@@ -187,18 +225,10 @@
                         const gosterilecekHiz = kullaniciHizi ? (kullaniciHizi * 3.6).toFixed(2) : 0; // m/s'yi km/h'ye çevir
 
                         // Hız bilgisini göster
-                        hizBilgisiniGoster(gosterilecekHiz);
+                        hizBilgisiGoster(gosterilecekHiz);
 
                         // Haritada kullanıcı konumunu işaretle
                         const kullaniciEnlemBoylam = L.latLng(pozisyon.coords.latitude, pozisyon.coords.longitude);
-
-                        // İlk açılışta haritayı konum takip et
-                        if (haritaIlkAcilis) {
-                            harita.flyTo(kullaniciEnlemBoylam, 13, {
-                                animate: false
-                            });
-                            haritaIlkAcilis = false;
-                        }
 
                         // Konum değişikliği animasyonu ekleyin
                         harita.flyTo(kullaniciEnlemBoylam, 13, {
