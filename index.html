@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Radar Uyarı Sistemi</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
     
     <!-- Leaflet CSS dosyasını ekleyin -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
@@ -34,6 +35,18 @@
         #isaretleriSil {
             position: fixed;
             bottom: 20px;
+            right: 20px;
+            padding: 10px;
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        #konumumaGit {
+            position: absolute;
+            bottom: 63px;
             right: 20px;
             padding: 10px;
             background-color: #007BFF;
@@ -74,10 +87,13 @@
     
     <section id="harita"></section>
 
-    <center><div id="betaYazi"><h1>Bu site daha henüz yapım aşamasındadır!</h1></b></div>       
+    <center><div id="betaYazi"><h1>Bu site daha henüz yapım aşamasındadır!</h1></b></div></center>       
     
     <!-- İşaretleri Sil düğmesi -->
     <button id="isaretleriSil">İşaretleri Sil</button>
+
+    <!-- Konumuma git -->
+    <button id="konumumaGit">Konumuma git</button>
 
     <!-- Harita altındaki açıklama alanı -->
     <div id="aciklama">
@@ -120,6 +136,7 @@
             });
         }
 
+
         const harita = L.map('harita').setView([41.005, 39.726], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(harita);
 
@@ -134,6 +151,7 @@
         // İşaretleri Sil düğmesini seç
         const isaretleriSilButonu = document.getElementById('isaretleriSil');
 
+
         // İşaretleri Sil düğmesine tıklandığında
         isaretleriSilButonu.addEventListener('click', function () {
             // Haritadaki tüm işaretçileri kaldır
@@ -143,6 +161,15 @@
                 }
             });
         });
+
+        // Konumua Git düğmesini seç
+        const konumumaGitButonu = document.getElementById("konumumaGit");
+
+        // Konumuma Git düğmesi tıklandığında
+        konumumaGitButonu.addEventListener('click', function () {
+            //Bulunduğumuz konuma geri dönme
+        })
+        
 
         // Hız bilgisi alanı
         const hizBilgisi = document.getElementById('hizBilgisi');
